@@ -24,7 +24,20 @@ else
   print_container_already_initialized $BITNAMI_APP_NAME
 fi
 
+# Look for SQL files to import in /docker-entrypoint-initdb.d/
+for f in /docker-entrypoint-initdb.d/*; do
+	case "$f" in
+		*.sh)     echo "$0: running $f"; . "$f" ;;
+		*.sql)    echo "$0: running $f"; "${mysql[@]}" < "$f"; echo ;;
+		*.sql.gz) echo "$0: running $f"; gunzip -c "$f" | "${mysql[@]}"; echo ;;
+		*)        echo "$0: ignoring $f" ;;
+	esac
+	echo
+done
+
 chown -R $BITNAMI_APP_USER:$BITNAMI_APP_USER \
   $BITNAMI_APP_VOL_PREFIX/conf/ \
   $BITNAMI_APP_VOL_PREFIX/logs/ \
   $BITNAMI_APP_VOL_PREFIX/data/ || true
+
+
